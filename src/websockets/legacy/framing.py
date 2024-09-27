@@ -4,10 +4,13 @@ import struct
 from collections.abc import Awaitable, Sequence
 from typing import Any, Callable, NamedTuple
 
+import time
+
 from .. import extensions, frames
 from ..exceptions import PayloadTooBig, ProtocolError
 from ..frames import BytesLike
-from ..typing import Data
+from ..typing import Data, Optional
+
 
 
 try:
@@ -23,6 +26,8 @@ class Frame(NamedTuple):
     rsv1: bool = False
     rsv2: bool = False
     rsv3: bool = False
+    start_time_ns: Optional[int] = None
+    finish_time_ns: Optional[int] = None
 
     @property
     def new_frame(self) -> frames.Frame:
@@ -69,6 +74,7 @@ class Frame(NamedTuple):
 
         # Read the header.
         data = await reader(2)
+        start_time_ns = time.time_ns()
         head1, head2 = struct.unpack("!BB", data)
 
         # While not Pythonic, this is marginally faster than calling bool().
@@ -111,6 +117,7 @@ class Frame(NamedTuple):
 
         new_frame.check()
 
+        finish_time_ns = time.time_ns()
         return cls(
             new_frame.fin,
             new_frame.opcode,
@@ -118,6 +125,8 @@ class Frame(NamedTuple):
             new_frame.rsv1,
             new_frame.rsv2,
             new_frame.rsv3,
+            start_time_ns,
+            finish_time_ns,
         )
 
     def write(

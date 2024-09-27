@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from typing import Optional
 import dataclasses
 import enum
 import io
@@ -8,6 +9,7 @@ import secrets
 import struct
 from collections.abc import Generator, Sequence
 from typing import Callable, Union
+import time
 
 from .exceptions import PayloadTooBig, ProtocolError
 
@@ -144,6 +146,8 @@ class Frame:
     rsv1: bool = False
     rsv2: bool = False
     rsv3: bool = False
+    start_time_ns: Optional[int] = None
+    finish_time_ns: Optional[int] = None
 
     # Configure if you want to see more in logs. Should be a multiple of 3.
     MAX_LOG_SIZE = int(os.environ.get("WEBSOCKETS_MAX_LOG_SIZE", "75"))
@@ -229,6 +233,7 @@ class Frame:
         """
         # Read the header.
         data = yield from read_exact(2)
+        start_time_ns = time.time_ns()
         head1, head2 = struct.unpack("!BB", data)
 
         # While not Pythonic, this is marginally faster than calling bool().
@@ -262,7 +267,8 @@ class Frame:
         if mask:
             data = apply_mask(data, mask_bytes)
 
-        frame = cls(opcode, data, fin, rsv1, rsv2, rsv3)
+        finish_time_ns = time.time_ns()
+        frame = cls(opcode, data, fin, rsv1, rsv2, rsv3, start_time_ns, finish_time_ns)
 
         if extensions is None:
             extensions = []
@@ -270,6 +276,8 @@ class Frame:
             frame = extension.decode(frame, max_size=max_size)
 
         frame.check()
+        frame.start_time_ns = start_time_ns
+        frame.finish_time_ns = finish_time_ns
 
         return frame
 

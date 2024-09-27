@@ -1012,6 +1012,7 @@ class WebSocketCommonProtocol(asyncio.Protocol):
 
         """
         frame = await self.read_data_frame(max_size=self.max_size)
+        start_time_ns = frame.start_time_ns
 
         # A close frame was received.
         if frame is None:
@@ -1073,7 +1074,8 @@ class WebSocketCommonProtocol(asyncio.Protocol):
                 raise ProtocolError("unexpected opcode")
             append(frame)
 
-        return ("" if text else b"").join(fragments)
+        finish_time_ns = frame.finish_time_ns
+        return ("" if text else b"").join(fragments), start_time_ns, finish_time_ns
 
     async def read_data_frame(self, max_size: int | None) -> Frame | None:
         """

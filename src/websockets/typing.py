@@ -20,7 +20,7 @@ __all__ = [
 # Public types used in the signature of public APIs
 
 # Change to str | bytes when dropping Python < 3.10.
-Data = Union[str, bytes]
+Data = tuple[Union[str, bytes], Optional[int], Optional[int]]
 """Types supported in a WebSocket message:
 :class:`str` for a Text_ frame, :class:`bytes` for a Binary_.
 

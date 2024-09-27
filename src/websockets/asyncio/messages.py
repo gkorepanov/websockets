@@ -172,10 +172,12 @@ class Assembler:
         self.get_in_progress = False
 
         data = b"".join(frame.data for frame in frames)
+        start_time_ns = frames[0].start_time_ns
+        finish_time_ns = frames[-1].finish_time_ns
         if decode:
-            return data.decode()
+            return data.decode(), start_time_ns, finish_time_ns
         else:
-            return data
+            return data, start_time_ns, finish_time_ns
 
     async def get_iter(self, decode: bool | None = None) -> AsyncIterator[Data]:
         """
