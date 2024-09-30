@@ -1012,11 +1012,13 @@ class WebSocketCommonProtocol(asyncio.Protocol):
 
         """
         frame = await self.read_data_frame(max_size=self.max_size)
-        start_time_ns = frame.start_time_ns
 
         # A close frame was received.
         if frame is None:
             return None
+
+        start_time_ns = frame.start_time_ns
+        finish_time_ns = frame.finish_time_ns
 
         if frame.opcode == OP_TEXT:
             text = True
@@ -1027,7 +1029,7 @@ class WebSocketCommonProtocol(asyncio.Protocol):
 
         # Shortcut for the common case - no fragmentation
         if frame.fin:
-            return frame.data.decode() if text else frame.data
+            return (frame.data.decode() if text else frame.data), start_time_ns, finish_time_ns
 
         # 5.4. Fragmentation
         fragments: list[Data] = []
